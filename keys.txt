@@ -1,2 +1,2 @@
-API_KEY_GROQ= ingresa el API_KEY_GROQ
-API_KEY_OPENAI=ingresa el API_KEY de open router
+API_KEY_GROQ=
+API_KEY_OPENAI=
