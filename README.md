@@ -1,15 +1,31 @@
-Bot de Telegram con Orquestador de IAs
+🤖 Bot de Telegram con Orquestador de IAs
 
-Bot de Telegram que integra múltiples APIs de modelos de lenguaje (Groq y OpenRouter) y selecciona automáticamente cuál utilizar según la complejidad de la consulta.
+Bot de Telegram que integra múltiples APIs de modelos de lenguaje (Groq y OpenRouter) y selecciona dinámicamente cuál utilizar según la complejidad de la consulta.
 
-Características
-Selección automática de modelo (Groq / OpenRouter)
+
+Características principales
+
+Orquestador de modelos (selección automática Groq / OpenRouter)
 Memoria de conversación por usuario
-Orquestador centralizado de lógica
-Respuestas rápidas con fallback implícito
+Persistencia en archivos (historial sobrevive reinicios)
+Manejo de sesiones (separación de contexto con "NUEVA SESION")
 Arquitectura modular y extensible
 
+
+Problema que resuelve
+
+Los modelos de lenguaje no mantienen estado por sí mismos.
+Este proyecto implementa:
+
+* Persistencia de conversaciones
+* Control de contexto enviado al modelo
+* Separación de sesiones para evitar contaminación de respuestas
+
+Esto permite simular un comportamiento más cercano a un chatbot real.
+
+
 Arquitectura
+
 Usuario (Telegram)
         ↓
       Bot
@@ -17,46 +33,57 @@ Usuario (Telegram)
  Orquestador
    ↓       ↓
 Groq   OpenRouter
-bot.py: Maneja la interacción con Telegram
-Orquestador.py: Decide qué modelo usar
-Groq.py / OpenRouter.py: Integración con APIs
 
-⚙️ Instalación
-Instalar dependencias
+
+Componentes:
+
+* `bot.py` → Maneja interacción con Telegram
+* `Orquestador.py` → Decide qué modelo usar
+* `Groq.py` / `OpenRouter.py` → Integración con APIs
+
+Instalación
+
+bash
 pip install python-telegram-bot requests openai groq python-dotenv
 
-🔐 Configuración
+Configuración
+
+Configurar las siguientes variables:
+
+* `TELEGRAM_TOKEN`
+* `API_KEY_GROQ`
+* `API_KEY_OPENAI`
 
 
-En el archivo Bot.py en TELEGRAM_TOKEN ingresar el token que se brindo cuando se creo el bot con BOTFATHER
-En el archivo Keys.txt:
-API_KEY_GROQ= ingresar tu_api_key_groq
-API_KEY_OPENAI= ingresar tu_api_key_openrouter
-▶️ Uso
+Uso
 
-Ejecutar el bot:
-
+bash
 python bot.py
 
 Luego:
 
-Abrir Telegram
-Buscar tu bot
-Enviar un mensaje
-🧠 Cómo funciona
+1. Abrir Telegram
+2. Buscar el bot
+3. Enviar un mensaje
 
-El sistema utiliza un orquestador que decide qué modelo usar en función de la consulta:
 
-Consultas cortas → Groq (rápido)
-Consultas largas → OpenRouter (más potente)
+Cómo funciona
 
-Además, mantiene un historial por usuario para dar contexto a las respuestas.
+1. Se recibe el mensaje del usuario
+2. Se carga el historial persistido
+3. Se detecta inicio de nueva sesión (ej: "hola")
+4. Se filtra el contexto relevante (última sesión)
+5. El orquestador selecciona el modelo
+6. Se genera la respuesta
+7. Se guarda el historial actualizado
 
-📌 Ejemplo de flujo
-Usuario envía mensaje
-Se guarda en historial
-Se construye el prompt
-El orquestador selecciona modelo
-Se genera respuesta
-Se guarda en historial
-Se responde al usuario
+Persistencia y sesiones
+
+* Cada usuario tiene su propio archivo de historial
+* Se marca el inicio de nuevas sesiones con `"Sistema: NUEVA SESION"`
+* El sistema utiliza únicamente la última sesión para generar respuestas
+
+Esto evita mezclar contextos de conversaciones anteriores.
+
+
+By Ignacio Negretti
