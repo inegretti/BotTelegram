@@ -10,7 +10,7 @@ from Orquestador import *
 # =========================
 
 
-TELEGRAM_TOKEN = ""
+TELEGRAM_TOKEN = "ingresa tu token de telegram aqui"
 
 orq = Orquestador()
 
@@ -18,6 +18,15 @@ orq = Orquestador()
 # TU ORQUESTADOR (simplificado)
 # =========================
 historiales = {}
+
+def obtener_ultima_sesion(historial):
+    nueva = []
+    for msg in reversed(historial):
+        if msg["role"] == "system" and msg["content"] == "NUEVA SESION":
+            break
+        nueva.append(msg)
+    return list(reversed(nueva))
+
 
 def preguntar(user_id, mensaje):
     try:
@@ -51,26 +60,45 @@ def preguntar(user_id, mensaje):
                             contenido = linea.replace("Asistente:", "").strip()
                             historiales[user_id].append({"role": "assistant", "content": contenido})
 
-        # agregar mensaje nuevo
-        historiales[user_id].append({"role": "user", "content": mensaje})
+        mensaje_limpio = mensaje.strip().lower()
 
-        prompt = orq.construir_prompt(historiales[user_id])
+        # Detectar inicio de nueva sesión (SIN borrar historial)
+        if any(mensaje_limpio.startswith(p) for p in ["hola", "buenas", "buen día"]):
+            historiales[user_id].append({
+                "role": "system",
+                "content": "NUEVA SESION"
+            })
+
+        # Agregar mensaje del usuario
+        historiales[user_id].append({
+            "role": "user",
+            "content": mensaje
+        })
+
+        # 🔥 USAR SOLO LA ÚLTIMA SESIÓN
+        historial_filtrado = obtener_ultima_sesion(historiales[user_id])
+
+        prompt = orq.construir_prompt(historial_filtrado)
         response = orq.consulta(prompt)
 
-        historiales[user_id].append({"role": "assistant", "content": response})
+        # Guardar respuesta
+        historiales[user_id].append({
+            "role": "assistant",
+            "content": response
+        })
 
-        # guardar TODO el historial
-        with open(archivo_path, "w",encoding="utf-8") as archivo:
+        # Guardar TODO el historial en archivo
+        with open(archivo_path, "w", encoding="utf-8") as archivo:
             for msg in historiales[user_id]:
                 if msg["role"] == "user":
                     archivo.write(f"Usuario: {msg['content']}\n")
                 elif msg["role"] == "assistant":
-                    archivo.write(f"Asistente: {msg['content']}\n")       
+                    archivo.write(f"Asistente: {msg['content']}\n")
+                elif msg["role"] == "system":
+                    archivo.write(f"Sistema: {msg['content']}\n")
+
         return response
-        
-           
-    
-    
+
     except Exception as e:
         return f"Error: {e}"
 
